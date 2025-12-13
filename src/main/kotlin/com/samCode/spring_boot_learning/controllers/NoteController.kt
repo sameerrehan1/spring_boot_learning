@@ -1,11 +1,14 @@
 package com.samCode.spring_boot_learning.controllers
 
+import com.samCode.spring_boot_learning.controllers.NoteController.NoteResponse
 import com.samCode.spring_boot_learning.database.model.Note
 import com.samCode.spring_boot_learning.repository.NoteRepository
 import org.bson.types.ObjectId
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 
@@ -34,7 +37,6 @@ class NoteController(
     @PostMapping
     fun save(@RequestBody request: NoteRequest): NoteResponse {
 
-        // Fix 2: Closed the parentheses properly for the Note constructor
         val savedNote = repository.save(
             Note(
                 id = request.id?.let{ ObjectId(it)} ?:ObjectId.get(),
@@ -46,13 +48,23 @@ class NoteController(
             )
         )
 
-        // Fix 3: Convert the saved "Note" entity into a "NoteResponse"
-        return NoteResponse(
-            id = savedNote.id.toHexString(), // Assuming your Note entity has an 'id' field
-            title = savedNote.title,
-            content = savedNote.content,
-            color = savedNote.color,
-            createdAt = savedNote.createdAt
-        )
+        return savedNote.toResponse()
     }
+
+    @GetMapping
+    fun findByOwnerId(
+        @RequestParam(required = true) ownerId: String,
+    ): List<NoteResponse> {
+        return repository.findByOwnerId(ObjectId(ownerId)).map { it.toResponse() }
+    }
+}
+
+private fun Note.toResponse() : NoteController.NoteResponse{
+    return NoteResponse(
+        id = id.toHexString(),
+        title = title,
+        content =content,
+        color = color,
+        createdAt = createdAt
+    )
 }
