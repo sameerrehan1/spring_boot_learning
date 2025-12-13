@@ -1,0 +1,70 @@
+package com.samCode.spring_boot_learning.controllers
+
+import com.samCode.spring_boot_learning.controllers.NoteController.NoteResponse
+import com.samCode.spring_boot_learning.database.model.Note
+import com.samCode.spring_boot_learning.repository.NoteRepository
+import org.bson.types.ObjectId
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
+import java.time.Instant
+
+@RestController
+@RequestMapping("/notes")
+class NoteController(
+    private val repository: NoteRepository
+) {
+
+    data class NoteRequest(
+        val id: String?,
+        val title: String,
+        val content: String,
+        val color: String,
+        val ownerId: String
+    )
+
+    data class NoteResponse(
+        val id: String,
+        val title: String,
+        val content: String,
+        val color: String,
+        val createdAt: Instant,
+    )
+
+    @PostMapping
+    fun save(@RequestBody request: NoteRequest): NoteResponse {
+
+        val savedNote = repository.save(
+            Note(
+                id = request.id?.let{ ObjectId(it)} ?:ObjectId.get(),
+                title = request.title,
+                content = request.content,
+                color = request.color,
+                createdAt = Instant.now(),
+                ownerId = ObjectId(request.ownerId)
+            )
+        )
+
+        return savedNote.toResponse()
+    }
+
+    @GetMapping
+    fun findByOwnerId(
+        @RequestParam(required = true) ownerId: String,
+    ): List<NoteResponse> {
+        return repository.findByOwnerId(ObjectId(ownerId)).map { it.toResponse() }
+    }
+}
+
+private fun Note.toResponse() : NoteController.NoteResponse{
+    return NoteResponse(
+        id = id.toHexString(),
+        title = title,
+        content =content,
+        color = color,
+        createdAt = createdAt
+    )
+}
