@@ -4,7 +4,9 @@ import com.samCode.spring_boot_learning.controllers.NoteController.NoteResponse
 import com.samCode.spring_boot_learning.database.model.Note
 import com.samCode.spring_boot_learning.repository.NoteRepository
 import org.bson.types.ObjectId
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -23,7 +25,6 @@ class NoteController(
         val title: String,
         val content: String,
         val color: String,
-        val ownerId: String
     )
 
     data class NoteResponse(
@@ -44,7 +45,7 @@ class NoteController(
                 content = request.content,
                 color = request.color,
                 createdAt = Instant.now(),
-                ownerId = ObjectId(request.ownerId)
+                ownerId = ObjectId()
             )
         )
 
@@ -56,6 +57,11 @@ class NoteController(
         @RequestParam(required = true) ownerId: String,
     ): List<NoteResponse> {
         return repository.findByOwnerId(ObjectId(ownerId)).map { it.toResponse() }
+    }
+
+    @DeleteMapping(path = ["/{id}"])
+    fun delete(@PathVariable("id") id: String) {
+        repository.deleteById(ObjectId(id));
     }
 }
 
