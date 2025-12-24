@@ -27,6 +27,9 @@ class AuthService(
     )
 
     fun register(email:String, password:String): User {
+        val user = userRepository.findByEmail(email.trim()) ?: throw BadCredentialsException("Email already exists")
+
+
         return userRepository.save(
             User(
                 email = email,
@@ -44,6 +47,8 @@ class AuthService(
 
         val newAccessToken = jwtService.generateAccessToken(user.id.toHexString())
         val newRefreshToken = jwtService.generateRefreshToken(user.id.toHexString())
+
+        storeRefreshToken(user.id,newRefreshToken)
         return TokenPair(
             newAccessToken,
             newRefreshToken
@@ -61,10 +66,10 @@ class AuthService(
         }
 
         val hashed = hashToken(refreshToken)
-        refreshTokenRepository.findByUserIdandHashedToken(user.id, hashed)
+        refreshTokenRepository.findByUserIdAndHashedToken(user.id, hashed)
             ?: throw IllegalArgumentException("Refresh Token not found")
 
-        refreshTokenRepository.deleteByUserIdandHashedToken(user.id, hashed)
+        refreshTokenRepository.deleteByUserIdAndHashedToken(user.id, hashed)
 
         val newAccessToken = jwtService.generateAccessToken(user.id.toHexString())
         val newRefreshToken = jwtService.generateRefreshToken(user.id.toHexString())
